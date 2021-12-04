@@ -1,0 +1,8 @@
+# make a bare minimal image
+FROM scratch
+
+WORKDIR app
+
+COPY addlicense ./
+
+ENTRYPOINT ["/app/addlicense"]

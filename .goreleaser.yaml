@@ -1,9 +1,16 @@
 before:
   hooks:
     - go mod tidy
+
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+
+#gomod:
+#  proxy: true
+
 builds:
-  - env:
-      - CGO_ENABLED=0
+  - binary: addlicense
     goos:
       - linux
       - windows
@@ -11,6 +18,71 @@ builds:
     goarch:
       - amd64
       - arm64
+#signs:
+#  - cmd: cosign
+#    env:
+#      - COSIGN_EXPERIMENTAL=1
+#    certificate: '{{ trimsuffix .Env.artifact ".txt" }}.pem'
+#    args:
+#      - sign-blob
+#      - '--oidc-issuer=https://token.actions.githubusercontent.com'
+#      - '--output-certificate=${certificate}'
+#      - '--output-signature=${signature}'
+#      - '${artifact}'
+#docker_signs:
+#  - cmd: cosign
+#    env:
+#      - COSIGN_EXPERIMENTAL=1
+#    artifacts: manifests
+#    args:
+#      - 'sign'
+#      - '--oidc-issuer=https://token.actions.githubusercontent.com'
+#      - '${artifact}'
+dockers:
+  - image_templates:
+      - 'devopps/addlicense:{{ .Tag }}-amd64'
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-amd64'
+    dockerfile: Dockerfile.goreleaser
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - 'devopps/addlicense:{{ .Tag }}-arm64'
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-arm64'
+    dockerfile: Dockerfile.goreleaser
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/arm64"
+    goarch: arm64
+docker_manifests:
+  - name_template: 'devopps/addlicense:{{ .Tag }}'
+    image_templates:
+      - 'devopps/addlicense:{{ .Tag }}-amd64'
+      - 'devopps/addlicense:{{ .Tag }}-arm64'
+  - name_template: 'ghcr.io/developer-guy/addlicense:{{ .Tag }}'
+    image_templates:
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-amd64'
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-arm64'
+  - name_template: 'devopps/addlicense:latest'
+    image_templates:
+      - 'devopps/addlicense:{{ .Tag }}-amd64'
+      - 'devopps/addlicense:{{ .Tag }}-arm64'
+  - name_template: 'ghcr.io/developer-guy/addlicense:latest'
+    image_templates:
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-amd64'
+      - 'ghcr.io/developer-guy/addlicense:{{ .Tag }}-arm64'
 archives:
   - format_overrides:
     - goos: windows
